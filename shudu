@@ -1,0 +1,292 @@
+import java.awt.*;   
+import java.awt.event.*;   
+import java.io.*;   
+import javax.swing.*;   
+import java.util.*;   
+ 
+public class ShuDu1 extends JFrame implements ActionListener,ItemListener{   //框架窗口响应单击事件
+  private MenuBar menubar=new MenuBar();     //私有成员变量
+  private Menu menu_file=new Menu("File");    //定义File菜单按钮
+  private Menu menu_edit=new Menu("Result");  
+       
+  private MenuItem item_ans=new MenuItem("Answer");  //定义菜单项
+  private MenuItem item_sol=new MenuItem("Submit");   
+  private MenuItem item_rem=new MenuItem("Restar");   
+  private MenuItem item_next=new MenuItem("Star");  
+  private MenuItem item_exit=new MenuItem("Exit");  
+  private JComboBox box=new JComboBox();   
+     
+  static int data[][]=new int[10][10];   //新建10*10的二维数组
+  static int ansdata[][]=new int[10][10];   //存放正确答案的二维数组
+ static int row[][]=new int[10][10];   
+ static int col[][]=new int[10][10];   
+ static int sql[][][]=new int[4][4][10];   
+ static JTextField text[][]=new JTextField[10][10];   
+ static String atext[][]=new String[10][10];   
+ static int hard=2;   
+ static int datahard[]={2,3,5}; // 不同的难度   
+    
+ class ShuDuAns extends JFrame{   //类声明;设置答案窗口
+  private JTextField atext[][]=new JTextField[10][10];   
+  public ShuDuAns(){   //构造类
+    super("Answer");   //设置框架窗口标题
+    this.setSize(300,300);   //设置框架尺寸
+    this.setLocation(200,200);   //设置框架显示在屏幕的位置
+    this.setVisible(true);   //组件设为可见
+    this.setResizable(false);   //窗口大小不能改变
+    JPanel apanel_but=new JPanel(new FlowLayout());   //将面板设为流布局
+    JPanel apanel_txt=new JPanel(new GridLayout(3,3,2,2));   //将面板内部设为网格布局，参数指定为3行3列，并设置大小
+    JPanel apanel[]=new JPanel[10];   
+       
+    for(int i=1;i<=9;i++){   //尝试填充的次数
+     apanel[i]=new JPanel(new GridLayout(3,3));  //设置3行3列的网格布局 
+     apanel_txt.add(apanel[i]);   //依次添加组件，添加宫格
+     int m=(i+2)/3*3-2;   
+     int n=((i-1)%3+1)*3-2;   
+     for(int j=m;j<=m+2;j++){   
+      for(int k=n;k<=n+2;k++){   
+       atext[j][k]=new JTextField(Integer.toString(data[j][k]));   //设置为整数
+       atext[j][k].setHorizontalAlignment(JTextField.CENTER);   //文本设置为水平居中
+       atext[j][k].setEditable(false);   //不可编辑，只能显示
+       apanel[i].add(atext[j][k]);   //添加数字
+      }   
+     }   
+    }   
+    this.add(apanel_txt);   //为当前类添加宫格
+   }   
+ }   
+  
+ static int DFS(){   //静态成员方法
+     for(int i=1;i<=9;i++){   
+         for(int j=1;j<=9;j++){   
+             if(data[i][j]==0){   
+                 for(int k=1;k<=9;k++){   
+                     if( row[i][k]==0 && col[j][k]==0 && sql[(i+2)/3][(j+2)/3][k]==0 ){   //行、列3*3区域的检验
+                         data[i][j]=k;   
+                         row[i][k]=1;   
+                         col[j][k]=1;   
+                         sql[(i+2)/3][(j+2)/3][k]=1;   //九宫的间隔
+                         if( DFS()==1 )   
+                             return 1;   
+                         else{  
+                             data[i][j]=0;   
+                             row[i][k]=0;   
+                             col[j][k]=0;   
+                             sql[(i+2)/3][(j+2)/3][k]=0;   //宫内格子间的间隔
+                         }   
+                     }   
+                     if(k==9)   
+                         return 0;   //都设置完，结束
+                 }   
+             }   
+         }   
+     }   
+     return 1;   
+ }   
+    
+ static void set_data_zero(){   //数独初始化
+  for(int i=0;i<=9;i++){   
+   for(int j=0;j<=9;j++){   
+    data[i][j]=0;   //0表示数字未给出
+   }   
+  }   
+ }   
+    
+ static void setnum(){   //设置数字
+  setzero();   //未给出的数字，需玩家填入
+  set_data_zero();   //初始化数独
+  for(int i=1;i<=9;i++){   //填充次数
+   int n =(int)(Math.random()*100)+1;  //随机添加任意整数 
+   int j=i*3-((i+2)/3*8-6);   
+   data[i][j]=n%9+1;   //产生数字
+      
+   int k=data[i][j];   //设置间隔
+   row[i][k]=1;   
+   col[j][k]=1;   
+   sql[(i+2)/3][(j+2)/3][k]=1;   
+  }   
+  DFS();   
+ }   
+    
+ static void setzero(){   //数独空格初始化
+  for(int i=0;i<=9;i++){   
+   for(int k=0;k<=9;k++){   
+    row[i][k]=0;   
+    col[i][k]=0;   
+   }   
+      
+   for(int j=0;j<=9;j++){   
+    for(int k=0;k<=9;k++){   
+     sql[(i+2)/3][(j+2)/3][k]=0;   
+    }   
+   }   
+  }   
+ }   
+    
+ static void settext(){   //设置数独游戏中的数字
+  for(int i=1;i<=9;i++){   
+   for(int j=1;j<=9;j++){   
+    //int hard=2; //hard代表难度   
+    int n =(int)(Math.random()*100)+1;   //随机数
+    if(n%hard==0){   //根据选择的难易程度设置数独
+     text[i][j]=new JTextField(Integer.toString(data[i][j]));   
+     text[i][j].setEditable(false);   //不可编辑，只能显示
+    }   
+    else{   
+     text[i][j]=new JTextField();   //其他难度，新建文本行
+    }   
+       
+    text[i][j].setHorizontalAlignment(JTextField.CENTER);   //水平居中
+    atext[i][j]=text[i][j].getText();   //设置组件
+   }   
+  }   
+ }   
+    
+ static int gettext(){   //玩家填入数字
+  for(int i=1;i<=9;i++){   
+   for(int j=1;j<=9;j++){   
+    try{   //异常处理
+     int k=Integer.parseInt(text[i][j].getText());   //第一个文本行输入操作
+     ansdata[i][j]=k;   
+    }   
+    catch(NumberFormatException nfe){   //捕获PerseInt( )方法声明的异常对象
+     JOptionPane.showMessageDialog(null,"数据中包括非数字，请重新输入！");    //提示出错信息
+     return 0;   
+    }   
+   }   
+  }   
+  return 1;   
+ }   
+    
+ static int ans(){   //设置答案窗口的面板格局
+  setzero();   //空格初始化
+  for(int i=1;i<=9;i++){   
+   for(int j=1;j<=9;j++){      
+    int k=ansdata[i][j];   
+    if( k>9 || k<1 ){   
+     return 0;   
+    }   
+    if( row[i][k]==1 || col[j][k]==1 || sql[(i+2)/3][(j+2)/3][k]==1 ){   
+     return 0;   
+    }   
+    row[i][k]=1;   
+    col[j][k]=1;   
+    sql[(i+2)/3][(j+2)/3][k]=1;       
+   }   
+  }   
+  return 1;   
+ }   
+    
+  public ShuDu1(){   //数独游戏布局
+   super("ShuDu Game");   //窗口标题
+   this.setSize(470,500);   //设置窗口尺寸
+   this.setLocation(260,130);   //窗口位置
+   this.setVisible(true);   //显示窗口
+   this.setDefaultCloseOperation(EXIT_ON_CLOSE);   //单击窗口按钮时，结束程序运行
+   this.setResizable(false);    //窗口大小不可变
+   JPanel panel_but=new JPanel(new FlowLayout());   
+   JPanel panel_txt=new JPanel(new GridLayout(3,3,2,2));   //将面板设置为3行3列网格布局,并设置大小
+
+   JPanel panel[]=new JPanel[10];   
+     
+   for(int i=1;i<=9;i++){   //设置9个面板
+    panel[i]=new JPanel(new GridLayout(3,3));   //将面板设置为3行3列网格布局
+    panel_txt.add(panel[i]);   //添加组件
+    int m=(i+2)/3*3-2;   //生成九个3*3的网格，并添加数字
+    int n=((i-1)%3+1)*3-2;   
+    for(int j=m;j<=m+2;j++){   
+     for(int k=n;k<=n+2;k++){   
+      panel[i].add(text[j][k]);      
+     }   
+    }   
+   }   
+  
+   this.add(panel_but,"North");   //为当前类添加框架
+   this.add(panel_txt);   //添加文本
+      
+   menubar.add(menu_file); //添加主菜单
+       
+  menu_file.add(item_next);   //添加下拉菜单选项
+  menu_file.add(item_ans);
+  menu_file.add(menu_edit);   
+  menu_file.add(item_exit); 
+  
+  menu_edit.add(item_sol);   
+  menu_edit.add(item_rem);      
+  item_exit.addActionListener(this);   //注册单击事件监听器，委托当前对象处理事件
+  item_next.addActionListener(this);   
+  item_ans.addActionListener(this);   
+  item_sol.addActionListener(this);   
+  item_rem.addActionListener(this);   
+        
+  this.setMenuBar(menubar);   //设置难易程度等级菜单
+   Object pro[]={" Easy "," Common "," Difficulty "};   
+   box=new JComboBox(pro);   //单击事件处理方法，实现ActionListener接口
+   if(hard==datahard[0]){   
+    box.setSelectedIndex(0);   
+   }   
+   if(hard==datahard[1]){   
+    box.setSelectedIndex(1);   
+   }   
+   if(hard==datahard[2]){   
+    box.setSelectedIndex(2);   
+   }   
+   panel_but.add(box);   
+   box.addItemListener(this);  
+  }   
+        
+ public void actionPerformed(ActionEvent e){      //单击事件处理方法，实现ActionListener接口
+  if( e.getSource()==item_exit  ){  //退出，e.getSource()获得当前事件源组件比较引用
+   System.exit(0);   
+  }   
+     
+  if( e.getSource()==item_sol  ){  //提交     
+   if(gettext()==1){   
+      if(ans()==1){   
+        JOptionPane.showMessageDialog(null,"答案正确，恭喜！");   
+          }   
+      else{   
+        JOptionPane.showMessageDialog(null,"答案错误，请再接再厉！");     //弹出提示框，显示信息
+      
+      }   
+   }   
+  }   
+     
+  if( e.getSource()==item_rem  ){ //重来    
+   for(int i=1;i<=9;i++){   
+    for(int j=1;j<=9;j++){   
+     text[i][j].setText(atext[i][j]);   
+    }   
+   }   
+  }   
+     
+  if( e.getSource()==item_ans  ){ //答案     
+   new ShuDuAns();   
+  }   
+     
+  if( e.getSource()==item_next  ){ //开局    
+   setnum();   
+   settext();   
+   this.setVisible(false);   
+   new ShuDu1();   
+  }   
+ }   
+     
+  public void itemStateChanged(ItemEvent e){   //改变难易程度，事件的处理方法
+   if(box.getSelectedIndex()==0){ // easy     
+    hard=datahard[0];   
+   }   
+   if(box.getSelectedIndex()==1){ // normal     
+    hard=datahard[1];   
+   }   
+   if(box.getSelectedIndex()==2){ // hard   
+    hard=datahard[2];   
+   }   
+  }   
+     
+  public static void main(String args[]){   //声明main方法
+    setnum();   
+    settext();   
+    new ShuDu1();   
+  }   
+}  
